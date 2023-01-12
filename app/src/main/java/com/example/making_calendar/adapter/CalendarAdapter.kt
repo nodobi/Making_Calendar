@@ -30,8 +30,19 @@ class CalendarAdapter(
     private var data: MutableList<LocalDate> = mutableListOf()
     val db = TaskDatabase.getInstance(context.applicationContext)
 
+    var calendarAdapterInterface: CalendarAdapterInterface? = null
+
     init {
         refreshData()
+    }
+
+    interface CalendarAdapterInterface {
+        fun onItemClick(holder: MyViewHolder)
+        fun onItemLongClick(holder: MyViewHolder)
+    }
+
+    fun registerEvents(calendarAdapterInterface: CalendarAdapterInterface) {
+        this.calendarAdapterInterface = calendarAdapterInterface
     }
 
     class MyViewHolder(val binding: ItemTextBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -100,33 +111,12 @@ class CalendarAdapter(
         }
 
         bind.root.setOnClickListener {
-            Log.d("hyeok", "Clicked $position")
-            val taskListDialog = RecyclerDialog(holder.localDate!!)
-            taskListDialog.show(fragmentManager, "TaskListDialog_Show")
+            this.calendarAdapterInterface?.onItemClick(holder)
         }
 
         // 리사이클러 뷰 홀더에 클릭 이벤트 추가
         bind.root.setOnLongClickListener {
-
-            val addTaskDialog = EditDialog(object : EditDialog.EditDialogInterface {
-                override fun onEditDialogButtonClick(text: String) {
-
-                    holder.addTaskOnItemContainer(text)
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val newTask = Task(
-                            holder.localDate!!.format(DateTimeFormatter.ISO_DATE),
-                            null,
-                            text
-                        )
-                        Log.d("hyeok", "insert!")
-                        db!!.taskDao().insert(newTask)
-                    }
-                    notifyDataSetChanged()
-
-                }
-            })
-            addTaskDialog.show(fragmentManager, "AddTaskDialog_Show")
-
+            this.calendarAdapterInterface?.onItemLongClick(holder)
             return@setOnLongClickListener true
         }
 
@@ -136,6 +126,8 @@ class CalendarAdapter(
         return data.size
     }
 
+
+    // 이번달 날짜 계산
     fun refreshData() {
         data = mutableListOf()
         val weekCnt: Int = calendarDate.plusMonths(1).withDayOfMonth(1).minusDays(1)

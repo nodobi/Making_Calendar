@@ -7,22 +7,32 @@ import android.view.WindowManager
 import android.widget.TextView
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView.Recycler
 import com.example.making_calendar.adapter.CalendarAdapter
+import com.example.making_calendar.adapter.RecyclerDialogAdapter
 import com.example.making_calendar.database.Task
+import com.example.making_calendar.database.TaskDatabase
 import com.example.making_calendar.databinding.ActivityMainBinding
+import com.example.making_calendar.dialog.EditDialog
+import com.example.making_calendar.dialog.RecyclerDialog
 import com.example.making_calendar.dialog.TaskDialog
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
-    lateinit var calendarAdapter: CalendarAdapter
 
-    var taskDialog: TaskDialog? = null
-    lateinit var dateYearTextView: TextView
-    lateinit var dateMonthTextView: TextView
+    lateinit var calendarAdapter: CalendarAdapter
+    lateinit var recyclerDialogAdapter: RecyclerDialogAdapter
+
+    lateinit var db : TaskDatabase
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,14 +43,11 @@ class MainActivity : AppCompatActivity() {
         // SOFT_INPUT_ADJUST_PAN 은 액티비티를 위로 올리고 ADJUST_RESIZE는 액티비티 사이즈를 조절한다.
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
 
-        dateYearTextView = binding.dateYearText
-        dateMonthTextView = binding.dateMonthText
-        var task: Task = Task(LocalDate.now().toString(), LocalTime.now().toString(), "")
-        Log.d("hyeok", "task.id = ${task.id}")
-        makeCalendar()
+        db = TaskDatabase.getInstance(this)!!
+
+        initCalendarAdapter()
+        initCalendarEvents()
         clickMoveEvent()
-        dateYearTextView.text = "${LocalDate.now().year}"
-        dateMonthTextView.text = "${LocalDate.now().month}"
 
     }
 
@@ -68,26 +75,54 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun makeCalendar() {
-        val calendarRecycler = binding.recyclerCalendar
-
-        val myGridLayout = GridLayoutManager(applicationContext, 7)
-        myGridLayout.orientation = GridLayoutManager.VERTICAL
-
-        val dataSet: MutableList<String> = mutableListOf()
-
-        calendarRecycler.layoutManager = myGridLayout
-
+    fun initCalendarAdapter() {
+        // 캘린더 어뎁터
+        val calendarLayout = GridLayoutManager(applicationContext, 7)
+        calendarLayout.orientation = GridLayoutManager.VERTICAL
         calendarAdapter = CalendarAdapter(supportFragmentManager, applicationContext)
-
-        calendarRecycler.adapter = calendarAdapter
-
         var itemDecoration1 =
             DividerItemDecoration(applicationContext, DividerItemDecoration.HORIZONTAL)
         var itemDecoration2 =
             DividerItemDecoration(applicationContext, DividerItemDecoration.VERTICAL)
 
-        calendarRecycler.addItemDecoration(itemDecoration1)
-        calendarRecycler.addItemDecoration(itemDecoration2)
+        binding.recyclerCalendar.apply {
+            adapter = calendarAdapter
+            layoutManager = calendarLayout
+            addItemDecoration(itemDecoration1)
+            addItemDecoration(itemDecoration2)
+        }
+
+        // 다이얼로그 어뎁터
     }
+
+    fun initCalendarEvents() {
+        calendarAdapter?.registerEvents(object: CalendarAdapter.CalendarAdapterInterface {
+            override fun onItemClick(holder: CalendarAdapter.MyViewHolder) {
+                Log.d("hyeok", "Clicked Item")
+                val taskListDialog = RecyclerDialog(holder.localDate!!)
+                taskListDialog.show(supportFragmentManager, "TaskListDialog_Show")
+            }
+
+            override fun onItemLongClick(holder: CalendarAdapter.MyViewHolder) {
+                val addTaskDialog = EditDialog(object : EditDialog.EditDialogInterface {
+                    override fun onEditDialogButtonClick(text: String) {
+                        holder.addTaskOnItemContainer(text)
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val newTask = Task(
+                                holder.localDate!!.format(DateTimeFormatter.ISO_DATE),
+                                null,
+                                text
+                            )
+                            Log.d("hyeok", "insert!")
+                            db!!.taskDao().insert(newTask)
+                        }
+                        calendarAdapter!!.notifyDataSetChanged()
+                    }
+                })
+                addTaskDialog.show(supportFragmentManager, "AddTaskDialog_Show")
+            }
+
+        })
+    }
+
 }
