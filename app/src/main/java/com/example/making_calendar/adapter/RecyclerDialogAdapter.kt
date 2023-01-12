@@ -1,68 +1,61 @@
 package com.example.making_calendar.adapter
 
-import android.content.Context
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.example.making_calendar.database.TaskDatabase
+import com.example.making_calendar.adapter.viewholder.RecyclerDialogViewHolder
+import com.example.making_calendar.data.CalendarData
 import com.example.making_calendar.databinding.ItemRecyclerDialogBinding
 import kotlinx.coroutines.*
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 class RecyclerDialogAdapter(
-    private val context : Context,
     private val targetDate: LocalDate
 ) :
-    RecyclerView.Adapter<RecyclerDialogAdapter.RecyclerDialogViewHolder>() {
+    RecyclerView.Adapter<RecyclerDialogViewHolder>() {
 
-    private var testData : MutableList<String> = mutableListOf()
-    private val db : TaskDatabase? = TaskDatabase.getInstance(context)
+    private lateinit var todoDatas : List<String>
+    private lateinit var recyclerDialogInterface: RecyclerDialogInterface
+    
+    interface RecyclerDialogInterface {
+        fun onItemClick(targetDate: LocalDate, todo: String)
+    }
 
-    class RecyclerDialogViewHolder(val binding: ItemRecyclerDialogBinding) :
-        ViewHolder(binding.root) {
-
+    fun registerEvent(recyclerDialogInterface: RecyclerDialogInterface) {
+        this.recyclerDialogInterface = recyclerDialogInterface
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerDialogViewHolder {
         val recyclerDialogViewHolder =
             RecyclerDialogViewHolder(ItemRecyclerDialogBinding.inflate(LayoutInflater.from(parent.context)))
-        val recycler = recyclerDialogViewHolder.binding.itemRecyclerDialogContainer
+
         return recyclerDialogViewHolder
     }
 
     override fun onBindViewHolder(holder: RecyclerDialogViewHolder, position: Int) {
-        holder.binding.itemRecyclerDialogTextView.text = testData[position]
+        holder.binding.itemRecyclerDialogTextView.text = todoDatas[position]
 
         holder.binding.itemRecyclerDialogContainer.setOnClickListener {
-            val db: TaskDatabase? = TaskDatabase.getInstance(context)
-
             CoroutineScope(Dispatchers.IO).launch {
-                db!!.taskDao().deleteTaskByDateWithTodo(targetDate.format(DateTimeFormatter.ISO_DATE), holder.binding.itemRecyclerDialogTextView.text.toString())
-                Log.d("hyeok", "You delete ${testData[position].toString()} Todo: ${holder.binding.itemRecyclerDialogTextView.text.toString()}")
+                CalendarData.deleteTask(targetDate, holder.binding.itemRecyclerDialogTextView.text.toString())
                 refreshDataByDate(targetDate)
+                // TODO("CalendarAdapter한테도 dataSet이 바뀌었다는걸 알려야함")
+
             }
-            notifyDataSetChanged()
         }
     }
 
     override fun getItemCount(): Int {
-        return testData.size
+        return todoDatas.size
     }
 
     fun refreshDataByDate(targetDate : LocalDate) {
-        val db = TaskDatabase.getInstance(context)
         CoroutineScope(Dispatchers.IO).launch {
-            testData = async(Dispatchers.IO) {
-                db!!.taskDao().getTodoListByDate(
-                    targetDate.format(
-                        DateTimeFormatter.ISO_DATE
-                    )
-                )?.toMutableList()
-            }.await()!!
-            notifyDataSetChanged()
+            todoDatas = CalendarData.loadTodosByDate(targetDate)!!
+            CoroutineScope(Dispatchers.Main).launch {
+                notifyDataSetChanged()
+            }
         }
     }
 }

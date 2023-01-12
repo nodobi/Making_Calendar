@@ -1,4 +1,4 @@
-package com.example.making_calendar.database
+package com.example.making_calendar.data.database
 
 import androidx.room.Dao
 import androidx.room.Delete

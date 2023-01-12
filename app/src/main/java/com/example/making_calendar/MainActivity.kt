@@ -4,14 +4,17 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
+import android.widget.CalendarView
 import android.widget.TextView
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView.Recycler
 import com.example.making_calendar.adapter.CalendarAdapter
 import com.example.making_calendar.adapter.RecyclerDialogAdapter
-import com.example.making_calendar.database.Task
-import com.example.making_calendar.database.TaskDatabase
+import com.example.making_calendar.adapter.viewholder.CalendarViewHolder
+import com.example.making_calendar.data.CalendarData
+import com.example.making_calendar.data.database.Task
+import com.example.making_calendar.data.database.TaskDatabase
 import com.example.making_calendar.databinding.ActivityMainBinding
 import com.example.making_calendar.dialog.EditDialog
 import com.example.making_calendar.dialog.RecyclerDialog
@@ -42,9 +45,9 @@ class MainActivity : AppCompatActivity() {
         // 소프트 키보드가 올라갔을 때 화면에 아무 적용도 하지 않음
         // SOFT_INPUT_ADJUST_PAN 은 액티비티를 위로 올리고 ADJUST_RESIZE는 액티비티 사이즈를 조절한다.
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
-
         db = TaskDatabase.getInstance(this)!!
 
+        CalendarData.loadDatabase(applicationContext)
         initCalendarAdapter()
         initCalendarEvents()
         clickMoveEvent()
@@ -54,24 +57,22 @@ class MainActivity : AppCompatActivity() {
     fun clickMoveEvent() {
         binding.nextMonthImg.setOnClickListener {
             Log.d("hyeok", "Click NextMonthImgBtn")
-            calendarAdapter.calendarDate = calendarAdapter.calendarDate.plusMonths(1)
+            CalendarData.moveMonth(1)
             calendarAdapter.refreshData()
             calendarAdapter.notifyDataSetChanged()
 
-            binding.dateYearText.text = "${calendarAdapter.calendarDate.year}"
-            binding.dateMonthText.text =
-                "${calendarAdapter.calendarDate.month.getDisplayName(TextStyle.SHORT, Locale.US)}"
+            binding.dateYearText.text = CalendarData.curDate.year.toString()
+            binding.dateMonthText.text = CalendarData.curDate.monthValue.toString()
         }
 
         binding.prevMonthImg.setOnClickListener {
             Log.d("hyeok", "Click PrevMonthImgBtn")
-            calendarAdapter.calendarDate = calendarAdapter.calendarDate.minusMonths(1)
+            CalendarData.moveMonth(-1)
             calendarAdapter.refreshData()
             calendarAdapter.notifyDataSetChanged()
 
-            binding.dateYearText.text = "${calendarAdapter.calendarDate.year}"
-            binding.dateMonthText.text =
-                "${calendarAdapter.calendarDate.month.getDisplayName(TextStyle.SHORT, Locale.US)}"
+            binding.dateYearText.text = CalendarData.curDate.year.toString()
+            binding.dateMonthText.text = CalendarData.curDate.monthValue.toString()
         }
     }
 
@@ -93,30 +94,30 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 다이얼로그 어뎁터
+
     }
 
     fun initCalendarEvents() {
-        calendarAdapter?.registerEvents(object: CalendarAdapter.CalendarAdapterInterface {
-            override fun onItemClick(holder: CalendarAdapter.MyViewHolder) {
-                Log.d("hyeok", "Clicked Item")
+        calendarAdapter.registerEvents(object: CalendarAdapter.CalendarAdapterInterface {
+            override fun onItemClick(holder: CalendarViewHolder) {
                 val taskListDialog = RecyclerDialog(holder.localDate!!)
                 taskListDialog.show(supportFragmentManager, "TaskListDialog_Show")
             }
 
-            override fun onItemLongClick(holder: CalendarAdapter.MyViewHolder) {
+            override fun onItemLongClick(holder: CalendarViewHolder) {
                 val addTaskDialog = EditDialog(object : EditDialog.EditDialogInterface {
                     override fun onEditDialogButtonClick(text: String) {
                         holder.addTaskOnItemContainer(text)
                         CoroutineScope(Dispatchers.IO).launch {
                             val newTask = Task(
-                                holder.localDate!!.format(DateTimeFormatter.ISO_DATE),
+                                CalendarData.dateToString(holder.localDate!!),
                                 null,
                                 text
                             )
                             Log.d("hyeok", "insert!")
-                            db!!.taskDao().insert(newTask)
+                            db.taskDao().insert(newTask)
                         }
-                        calendarAdapter!!.notifyDataSetChanged()
+                        calendarAdapter.notifyDataSetChanged()
                     }
                 })
                 addTaskDialog.show(supportFragmentManager, "AddTaskDialog_Show")

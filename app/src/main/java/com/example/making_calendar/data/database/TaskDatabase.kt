@@ -1,4 +1,4 @@
-package com.example.making_calendar.database
+package com.example.making_calendar.data.database
 
 import android.content.Context
 import androidx.room.Database

@@ -39,7 +39,7 @@ class RecyclerDialog(
     }
 
     fun initRecycler() {
-        recyclerDialogAdapter = RecyclerDialogAdapter(requireContext(), targetDate)
+        recyclerDialogAdapter = RecyclerDialogAdapter(targetDate)
         recyclerDialogAdapter!!.refreshDataByDate(targetDate)
 
         binding.dialogRecyclerRecyclerView.adapter = recyclerDialogAdapter
