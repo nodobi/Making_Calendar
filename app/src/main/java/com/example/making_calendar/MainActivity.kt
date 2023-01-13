@@ -1,14 +1,11 @@
 package com.example.making_calendar
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
-import android.widget.CalendarView
-import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView.Recycler
 import com.example.making_calendar.adapter.CalendarAdapter
 import com.example.making_calendar.adapter.RecyclerDialogAdapter
 import com.example.making_calendar.adapter.viewholder.CalendarViewHolder
@@ -18,21 +15,15 @@ import com.example.making_calendar.data.database.TaskDatabase
 import com.example.making_calendar.databinding.ActivityMainBinding
 import com.example.making_calendar.dialog.EditDialog
 import com.example.making_calendar.dialog.RecyclerDialog
-import com.example.making_calendar.dialog.TaskDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.*
 
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
 
     lateinit var calendarAdapter: CalendarAdapter
-    lateinit var recyclerDialogAdapter: RecyclerDialogAdapter
 
     lateinit var db : TaskDatabase
 
@@ -80,7 +71,7 @@ class MainActivity : AppCompatActivity() {
         // 캘린더 어뎁터
         val calendarLayout = GridLayoutManager(applicationContext, 7)
         calendarLayout.orientation = GridLayoutManager.VERTICAL
-        calendarAdapter = CalendarAdapter(supportFragmentManager, applicationContext)
+        calendarAdapter = CalendarAdapter(applicationContext)
         var itemDecoration1 =
             DividerItemDecoration(applicationContext, DividerItemDecoration.HORIZONTAL)
         var itemDecoration2 =
@@ -100,7 +91,11 @@ class MainActivity : AppCompatActivity() {
     fun initCalendarEvents() {
         calendarAdapter.registerEvents(object: CalendarAdapter.CalendarAdapterInterface {
             override fun onItemClick(holder: CalendarViewHolder) {
-                val taskListDialog = RecyclerDialog(holder.localDate!!)
+                val taskListDialog = RecyclerDialog(holder.localDate!!, object: RecyclerDialogAdapter.RecyclerDialogInterface {
+                    override fun onItemClick(targetDate: LocalDate, todo: String) {
+                        calendarAdapter.notifyDataSetChanged()
+                    }
+                })
                 taskListDialog.show(supportFragmentManager, "TaskListDialog_Show")
             }
 
@@ -114,7 +109,6 @@ class MainActivity : AppCompatActivity() {
                                 null,
                                 text
                             )
-                            Log.d("hyeok", "insert!")
                             db.taskDao().insert(newTask)
                         }
                         calendarAdapter.notifyDataSetChanged()
@@ -125,5 +119,4 @@ class MainActivity : AppCompatActivity() {
 
         })
     }
-
 }

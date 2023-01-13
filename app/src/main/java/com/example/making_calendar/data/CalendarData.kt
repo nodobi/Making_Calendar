@@ -49,6 +49,7 @@ object CalendarData {
 
     fun loadTodosByDate(date: LocalDate): List<String>? {
         var todoList: List<String>? = db.taskDao().getTodoListByDate(dateToString(date))
+        Log.d("hyeok","LoadTodosByDate END")
         return todoList
     }
 

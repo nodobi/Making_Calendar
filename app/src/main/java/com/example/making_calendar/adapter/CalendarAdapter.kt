@@ -4,28 +4,19 @@ import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.making_calendar.adapter.viewholder.CalendarViewHolder
 import com.example.making_calendar.data.CalendarData
-import com.example.making_calendar.data.database.Task
-import com.example.making_calendar.data.database.TaskDatabase
 import com.example.making_calendar.databinding.ItemTextBinding
-import com.example.making_calendar.dialog.EditDialog
-import com.example.making_calendar.dialog.RecyclerDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.time.temporal.WeekFields
-import java.util.Calendar
 
 class CalendarAdapter(
-    private val fragmentManager: FragmentManager,
     private val context: Context
 ) :
     RecyclerView.Adapter<CalendarViewHolder>() {
@@ -70,7 +61,9 @@ class CalendarAdapter(
         var todoList: List<String>?
         CoroutineScope(Dispatchers.IO).launch {
             todoList = CalendarData.loadTodosByDate(data[position])
-            holder.onBind(data[position], todoList!!, context)
+            CoroutineScope(Dispatchers.Main).launch {
+                holder.onBind(data[position], todoList!!, context)
+            }
         }
 
         bind.root.setOnClickListener {
@@ -93,7 +86,6 @@ class CalendarAdapter(
     // 이번달 날짜 계산
     fun refreshData() {
         data = CalendarData.curMonthDateList()
-        notifyDataSetChanged()
     }
 
 
