@@ -11,13 +11,12 @@ import androidx.fragment.app.DialogFragment
 import com.example.making_calendar.databinding.DialogChoiceBinding
 
 class ChoiceDialog(
-    choiceDialogInterface: ChoiceDialogInterface,
     text: String, choice1Title: String, choice2Title: String
 ) : DialogFragment() {
     private var _binding: DialogChoiceBinding? = null
     private val binding get() = _binding!!
 
-    private var choiceDialogInterface: ChoiceDialogInterface
+    private var choiceDialogInterface: ChoiceDialogInterface? = null
     private var text: String
     private var choice1Title: String
     private var choice2Title: String
@@ -26,7 +25,6 @@ class ChoiceDialog(
         this.text = text
         this.choice1Title = choice1Title
         this.choice2Title = choice2Title
-        this.choiceDialogInterface = choiceDialogInterface
     }
 
     interface ChoiceDialogInterface {
@@ -74,10 +72,14 @@ class ChoiceDialog(
 
     fun initButtonEvents() {
         binding.dialogChoiceChoice1.setOnClickListener {
-            this.choiceDialogInterface.onChoice1Click()
+            this.choiceDialogInterface?.onChoice1Click()
         }
         binding.dialogChoiceChoice2.setOnClickListener {
-            this.choiceDialogInterface.onChoice2Click()
+            this.choiceDialogInterface?.onChoice2Click()
         }
+    }
+
+    fun registerEvents(choiceDialogInterface: ChoiceDialogInterface) {
+        this.choiceDialogInterface = choiceDialogInterface
     }
 }

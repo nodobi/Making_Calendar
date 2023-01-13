@@ -12,26 +12,23 @@ import androidx.fragment.app.DialogFragment
 import com.example.making_calendar.databinding.DialogEditBinding
 
 class EditDialog(
-    editDialogOnClickListener : EditDialogInterface
+    hint: String?, buttonTitle: String
 ) : DialogFragment() {
     private var _binding: DialogEditBinding? = null
     private val binding get() = _binding!!
 
-
-    var editDialogOnClickListener: EditDialogInterface? = null
-    private var text: String? = null;
-    private var buttonText : String? = null;
+    private var editDialogInterface: EditDialogInterface? = null
+    private var hint: String?
+    private var buttonTitle : String
 
     init {
-        this.editDialogOnClickListener = editDialogOnClickListener
+        this.hint = hint;
+        this.buttonTitle = buttonTitle
     }
-
 
     interface EditDialogInterface {
         fun onEditDialogButtonClick(text : String)
     }
-
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,11 +38,9 @@ class EditDialog(
         _binding = DialogEditBinding.inflate(inflater, container, false)
         val view = binding.root;
 
-        binding.dialogEditButton.setOnClickListener {
-            val text = binding.dialogEditEditText.text.toString()
-            editDialogOnClickListener?.onEditDialogButtonClick(text)
-            dismiss()
-        }
+        renameViews()
+        initButtonEvent()
+
         return view
     }
 
@@ -67,4 +62,19 @@ class EditDialog(
         dialog?.window?.attributes = params as LayoutParams
     }
 
+    fun renameViews() {
+        binding.dialogEditEditText.hint = hint
+        binding.dialogEditButton.text = buttonTitle
+    }
+
+    fun initButtonEvent() {
+        binding.dialogEditButton.setOnClickListener {
+            val text = binding.dialogEditEditText.text.toString()
+            editDialogInterface?.onEditDialogButtonClick(text)
+        }
+    }
+
+    fun registerEvent(editDialogInterface: EditDialogInterface) {
+        this.editDialogInterface = editDialogInterface
+    }
 }

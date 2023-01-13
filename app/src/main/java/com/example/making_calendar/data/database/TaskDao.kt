@@ -28,6 +28,9 @@ interface TaskDao {
     @Query("UPDATE task_table SET todo = :todo WHERE date = :date AND time = :time")
     fun updateTaskByDateTime(date: String, time: String, todo: String)
 
+    @Query("UPDATE task_table SET todo = :todo WHERE date = :date AND todo = :todo")
+    fun updateTaskByDate(date: String, todo: String)
+
     @Query("DELETE FROM task_table WHERE date =:date AND time = :time AND todo =:todo")
     fun deleteTaskByDateTimeWithTodo(date: String, time: String?, todo: String)
 

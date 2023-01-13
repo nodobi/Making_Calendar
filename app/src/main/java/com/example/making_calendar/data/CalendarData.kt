@@ -70,8 +70,11 @@ object CalendarData {
         return curMonthDates.toList()
     }
 
-
     fun deleteTask(date: LocalDate, todo: String) {
         db.taskDao().deleteTaskByDateWithTodo(dateToString(date), todo)
+    }
+
+    fun updateTask(date: LocalDate, todo: String) {
+        db.taskDao().updateTaskByDate(dateToString(date), todo)
     }
 }

@@ -17,6 +17,7 @@ import com.example.making_calendar.dialog.EditDialog
 import com.example.making_calendar.dialog.RecyclerDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -25,7 +26,7 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var calendarAdapter: CalendarAdapter
 
-    lateinit var db : TaskDatabase
+    lateinit var db: TaskDatabase
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,29 +90,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun initCalendarEvents() {
-        calendarAdapter.registerEvents(object: CalendarAdapter.CalendarAdapterInterface {
+        calendarAdapter.registerEvents(object : CalendarAdapter.CalendarAdapterInterface {
             override fun onItemClick(holder: CalendarViewHolder) {
-                val taskListDialog = RecyclerDialog(holder.localDate!!, object: RecyclerDialogAdapter.RecyclerDialogInterface {
-                    override fun onItemClick(targetDate: LocalDate, todo: String) {
-                        calendarAdapter.notifyDataSetChanged()
-                    }
-                })
+                val taskListDialog = RecyclerDialog(
+                    holder.localDate!!,
+                    object : RecyclerDialogAdapter.RecyclerDialogInterface {
+                        override fun onItemClick(targetDate: LocalDate, todo: String) {
+                            calendarAdapter.notifyDataSetChanged()
+                        }
+                    })
                 taskListDialog.show(supportFragmentManager, "TaskListDialog_Show")
             }
 
             override fun onItemLongClick(holder: CalendarViewHolder) {
-                val addTaskDialog = EditDialog(object : EditDialog.EditDialogInterface {
+                val addTaskDialog = EditDialog(null, "등록하기")
+                addTaskDialog.registerEvent(object : EditDialog.EditDialogInterface {
                     override fun onEditDialogButtonClick(text: String) {
                         holder.addTaskOnItemContainer(text)
-                        CoroutineScope(Dispatchers.IO).launch {
+                        CoroutineScope(Dispatchers.Main).launch {
                             val newTask = Task(
                                 CalendarData.dateToString(holder.localDate!!),
                                 null,
                                 text
                             )
-                            db.taskDao().insert(newTask)
+                            CoroutineScope(Dispatchers.IO).async {
+                                db.taskDao().insert(newTask)
+                            }.await()
+                            calendarAdapter.notifyDataSetChanged()
+                            addTaskDialog.dismiss()
                         }
-                        calendarAdapter.notifyDataSetChanged()
                     }
                 })
                 addTaskDialog.show(supportFragmentManager, "AddTaskDialog_Show")

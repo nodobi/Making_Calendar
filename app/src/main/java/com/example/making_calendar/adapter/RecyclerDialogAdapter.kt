@@ -1,26 +1,24 @@
 package com.example.making_calendar.adapter
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.example.making_calendar.adapter.viewholder.RecyclerDialogViewHolder
 import com.example.making_calendar.data.CalendarData
 import com.example.making_calendar.databinding.ItemRecyclerDialogBinding
 import com.example.making_calendar.dialog.ChoiceDialog
+import com.example.making_calendar.dialog.EditDialog
 import kotlinx.coroutines.*
 import java.time.LocalDate
-import java.util.Calendar
 
 class RecyclerDialogAdapter(
     private val fragmentManager: FragmentManager,
     private val targetDate: LocalDate
 ) :
-    RecyclerView.Adapter<RecyclerDialogViewHolder>(), ChoiceDialog.ChoiceDialogInterface {
+    RecyclerView.Adapter<RecyclerDialogViewHolder>() {
 
-    private lateinit var todoDatas : List<String>
+    private lateinit var todoDatas: List<String>
     private lateinit var recyclerDialogInterface: RecyclerDialogInterface
 
     init {
@@ -47,16 +45,36 @@ class RecyclerDialogAdapter(
         holder.binding.itemRecyclerDialogTextView.text = todoDatas[position]
 
         holder.binding.itemRecyclerDialogContainer.setOnClickListener {
-            val choiceDialog = ChoiceDialog(this, "${todoDatas[position]}", "수정", "삭제")
+            val choiceDialog = ChoiceDialog(holder.binding.itemRecyclerDialogTextView.text.toString(), "수정", "삭제")
+            choiceDialog.registerEvents(object: ChoiceDialog.ChoiceDialogInterface {
+                override fun onChoice1Click() {
+                    val modifyTaskDialog = EditDialog(todoDatas[holder.adapterPosition], "수정하기")
+                    modifyTaskDialog.registerEvent(object: EditDialog.EditDialogInterface {
+                        override fun onEditDialogButtonClick(text: String) {
+                            holder.binding.itemRecyclerDialogTextView.text = text
+                            // TODO("데이터베이스를 업데이트 하려면, Task를 식별할 수 있는 날짜가 필요,,")
+                            modifyTaskDialog.dismiss()
+                            choiceDialog.dismiss()
+                        }
+                    })
+                    modifyTaskDialog.show(fragmentManager, "modifyTaskDialog_show")
+                }
+
+                override fun onChoice2Click() {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        CoroutineScope(Dispatchers.IO).async {
+                            CalendarData.deleteTask(targetDate, todoDatas[holder.adapterPosition])
+                            todoDatas = CalendarData.loadTodosByDate(targetDate)!!
+                        }.await()
+                        notifyDataSetChanged()
+                        recyclerDialogInterface.onItemClick(targetDate, todoDatas[holder.adapterPosition])
+                    }
+                    choiceDialog.dismiss()
+                }
+
+            })
+
             choiceDialog.show(fragmentManager, "Choicefragment_show")
-//            CoroutineScope(Dispatchers.Main).launch {
-//                CoroutineScope(Dispatchers.IO).async {
-//                    CalendarData.deleteTask(targetDate, todoDatas[position])
-//                    todoDatas = CalendarData.loadTodosByDate(targetDate)!!
-//                }.await()
-//                notifyDataSetChanged()
-//                recyclerDialogInterface.onItemClick(targetDate, holder.binding.itemRecyclerDialogTextView.text.toString())
-//            }
 
         }
     }
@@ -65,18 +83,9 @@ class RecyclerDialogAdapter(
         return todoDatas.size
     }
 
-    fun refreshDataByDate(targetDate : LocalDate) {
+    fun refreshDataByDate(targetDate: LocalDate) {
         CoroutineScope(Dispatchers.IO).launch {
             todoDatas = CalendarData.loadTodosByDate(targetDate)!!
         }
-    }
-
-    override fun onChoice1Click() {
-        Log.d("hyeok", "Choice 1 Click")
-    }
-
-    override fun onChoice2Click() {
-        Log.d("hyeok", "Choice 2 Click")
-
     }
 }
