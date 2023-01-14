@@ -6,6 +6,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.making_calendar.adapter.viewholder.RecyclerDialogViewHolder
 import com.example.making_calendar.data.CalendarData
+import com.example.making_calendar.data.database.Task
 import com.example.making_calendar.databinding.ItemRecyclerDialogBinding
 import com.example.making_calendar.dialog.ChoiceDialog
 import com.example.making_calendar.dialog.EditDialog
@@ -18,16 +19,17 @@ class RecyclerDialogAdapter(
 ) :
     RecyclerView.Adapter<RecyclerDialogViewHolder>() {
 
-    private lateinit var todoDatas: List<String>
-    private lateinit var recyclerDialogInterface: RecyclerDialogInterface
+    private lateinit var data: List<Task>
+    private var recyclerDialogInterface: RecyclerDialogInterface? = null
 
     init {
+        setHasStableIds(true)
         refreshDataByDate(targetDate)
         notifyDataSetChanged()
     }
 
     interface RecyclerDialogInterface {
-        fun onItemClick(targetDate: LocalDate, todo: String)
+        fun onItemClick()
     }
 
     fun registerEvent(recyclerDialogInterface: RecyclerDialogInterface) {
@@ -42,13 +44,13 @@ class RecyclerDialogAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerDialogViewHolder, position: Int) {
-        holder.binding.itemRecyclerDialogTextView.text = todoDatas[position]
+        holder.binding.itemRecyclerDialogTextView.text = data[position].todo
 
         holder.binding.itemRecyclerDialogContainer.setOnClickListener {
             val choiceDialog = ChoiceDialog(holder.binding.itemRecyclerDialogTextView.text.toString(), "수정", "삭제")
             choiceDialog.registerEvents(object: ChoiceDialog.ChoiceDialogInterface {
                 override fun onChoice1Click() {
-                    val modifyTaskDialog = EditDialog(todoDatas[holder.adapterPosition], "수정하기")
+                    val modifyTaskDialog = EditDialog(data[holder.adapterPosition].todo, "수정하기")
                     modifyTaskDialog.registerEvent(object: EditDialog.EditDialogInterface {
                         override fun onEditDialogButtonClick(text: String) {
                             holder.binding.itemRecyclerDialogTextView.text = text
@@ -63,11 +65,11 @@ class RecyclerDialogAdapter(
                 override fun onChoice2Click() {
                     CoroutineScope(Dispatchers.Main).launch {
                         CoroutineScope(Dispatchers.IO).async {
-                            CalendarData.deleteTask(targetDate, todoDatas[holder.adapterPosition])
-                            todoDatas = CalendarData.loadTodosByDate(targetDate)!!
+                            CalendarData.deleteTask(data[holder.adapterPosition])
+                            data = CalendarData.loadTasksByDate(targetDate)!!
                         }.await()
                         notifyDataSetChanged()
-                        recyclerDialogInterface.onItemClick(targetDate, todoDatas[holder.adapterPosition])
+                        recyclerDialogInterface?.onItemClick()
                     }
                     choiceDialog.dismiss()
                 }
@@ -80,12 +82,16 @@ class RecyclerDialogAdapter(
     }
 
     override fun getItemCount(): Int {
-        return todoDatas.size
+        return data.size
+    }
+
+    override fun getItemId(position: Int): Long {
+        return data[position].id
     }
 
     fun refreshDataByDate(targetDate: LocalDate) {
         CoroutineScope(Dispatchers.IO).launch {
-            todoDatas = CalendarData.loadTodosByDate(targetDate)!!
+            data = CalendarData.loadTasksByDate(targetDate)!!
         }
     }
 }

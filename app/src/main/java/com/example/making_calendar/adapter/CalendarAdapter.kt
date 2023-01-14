@@ -3,14 +3,16 @@ package com.example.making_calendar.adapter
 import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.ViewGroup
-import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.making_calendar.adapter.viewholder.CalendarViewHolder
 import com.example.making_calendar.data.CalendarData
+import com.example.making_calendar.data.database.Task
 import com.example.making_calendar.databinding.ItemTextBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -20,13 +22,12 @@ class CalendarAdapter(
     private val context: Context
 ) :
     RecyclerView.Adapter<CalendarViewHolder>() {
-    var calendarDate: LocalDateTime = LocalDateTime.now()
-    private lateinit var data: List<LocalDate>
-
-    private lateinit var calendarAdapterInterface: CalendarAdapterInterface
+    private var dateData: List<LocalDate>? = null
+    private var calendarAdapterInterface: CalendarAdapterInterface? = null
 
     init {
         refreshData()
+        notifyDataSetChanged()
     }
 
     interface CalendarAdapterInterface {
@@ -39,8 +40,8 @@ class CalendarAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CalendarViewHolder {
-        val weekCnt: Int = calendarDate.plusMonths(1).withDayOfMonth(1).minusDays(1)
-            .get(WeekFields.SUNDAY_START.weekOfYear()) - calendarDate.withDayOfMonth(1)
+        val weekCnt: Int = CalendarData.curDate.plusMonths(1).withDayOfMonth(1).minusDays(1)
+            .get(WeekFields.SUNDAY_START.weekOfYear()) - CalendarData.curDate.withDayOfMonth(1)
             .get(WeekFields.SUNDAY_START.weekOfYear()) + 1
         val height = parent.height / weekCnt
         val width = parent.width / 7
@@ -55,38 +56,52 @@ class CalendarAdapter(
     }
 
     override fun onBindViewHolder(holder: CalendarViewHolder, position: Int) {
+
         val bind = holder.binding
-        holder.localDate = data[position]
-        holder.dateView.text = data[position].dayOfMonth.toString()
-        var todoList: List<String>?
-        CoroutineScope(Dispatchers.IO).launch {
-            todoList = CalendarData.loadTodosByDate(data[position])
-            CoroutineScope(Dispatchers.Main).launch {
-                holder.onBind(data[position], todoList!!, context)
+        holder.localDate = dateData?.get(holder.adapterPosition)
+        holder.dateView.text = holder.localDate?.dayOfMonth.toString()
+        var taskList: List<Task>? = null
+        CoroutineScope(Dispatchers.Main).launch {
+            CoroutineScope(Dispatchers.IO).async {
+                taskList = CalendarData.loadTasksByDate(holder.localDate!!)
+            }.await()
+            holder.onBind(taskList, context)
+        }
+        bind.root.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    Log.d("hyeok", "Action_Down")
+                    false
+                }
+                MotionEvent.ACTION_UP -> {
+                    Log.d("hyeok", "Action_Up")
+                    false
+                }
+                else -> false
             }
+            false
         }
 
         bind.root.setOnClickListener {
-            this.calendarAdapterInterface?.onItemClick(holder)
+            Log.d("hyeok", "onClickListener")
+//            this.calendarAdapterInterface?.onItemClick(holder)
         }
 
         // 리사이클러 뷰 홀더에 클릭 이벤트 추가
         bind.root.setOnLongClickListener {
-            this.calendarAdapterInterface?.onItemLongClick(holder)
+            Log.d("hyeok", "onLongClickListener")
+//            this.calendarAdapterInterface?.onItemLongClick(holder)
             return@setOnLongClickListener true
         }
-
-
     }
 
     override fun getItemCount(): Int {
-        return data.size
+        return dateData!!.size
     }
-
 
     // 이번달 날짜 계산
     fun refreshData() {
-        data = CalendarData.curMonthDateList()
+        dateData = CalendarData.curMonthDateList()
     }
 
 

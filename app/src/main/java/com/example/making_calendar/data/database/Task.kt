@@ -11,5 +11,5 @@ data class Task (
     var time: String?,
     var todo: String,
 ){
-    @PrimaryKey(autoGenerate = true) var id: Int = 0;
+    @PrimaryKey(autoGenerate = true) var id: Long = 0;
 }

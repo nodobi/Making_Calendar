@@ -6,6 +6,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.making_calendar.data.CalendarData
+import com.example.making_calendar.data.database.Task
 import com.example.making_calendar.databinding.ItemTextBinding
 import java.time.LocalDate
 
@@ -29,14 +30,13 @@ class CalendarViewHolder(val binding: ItemTextBinding) : RecyclerView.ViewHolder
         taskTextViewContainer.addView(textView)
     }
 
-    fun onBind(localDate: LocalDate, todoList : List<String>, context: Context) {
-        this.localDate = localDate
+    fun onBind(taskList: List<Task>?, context: Context) {
         this.context = context
-        dateView.text = localDate.dayOfMonth.toString()
-        Log.d("hyeok", "curDate: ${CalendarData.dateToString(localDate)}, todo: ${todoList.toString()}")
         taskTextViewContainer.removeAllViews()
-        for(todo in todoList) {
-            addTaskOnItemContainer(todo)
+        if (taskList != null) {
+            for(task in taskList) {
+                addTaskOnItemContainer(task.todo)
+            }
         }
     }
 }

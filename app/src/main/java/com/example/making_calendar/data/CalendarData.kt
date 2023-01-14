@@ -18,7 +18,10 @@ object CalendarData {
     private lateinit var db: TaskDatabase
 
     fun dateToString(date: LocalDate) = date.format(DateTimeFormatter.ISO_DATE)
-    fun timeToString(time: LocalTime) = time.format(DateTimeFormatter.ISO_DATE)
+    fun timeToString(time: LocalTime) = time.format(DateTimeFormatter.ISO_TIME)
+
+    fun stringToDate(dateString: String) = LocalDate.parse(dateString, DateTimeFormatter.ISO_DATE)
+    fun stringToTime(timeString: String) = LocalDate.parse(timeString, DateTimeFormatter.ISO_TIME)
 
     fun loadDatabase(context: Context) {
         db = TaskDatabase.getInstance(context)!!
@@ -70,8 +73,8 @@ object CalendarData {
         return curMonthDates.toList()
     }
 
-    fun deleteTask(date: LocalDate, todo: String) {
-        db.taskDao().deleteTaskByDateWithTodo(dateToString(date), todo)
+    fun deleteTask(task: Task) {
+        db.taskDao().delete(task)
     }
 
     fun updateTask(date: LocalDate, todo: String) {

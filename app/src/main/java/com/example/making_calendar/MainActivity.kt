@@ -84,9 +84,6 @@ class MainActivity : AppCompatActivity() {
             addItemDecoration(itemDecoration1)
             addItemDecoration(itemDecoration2)
         }
-
-        // 다이얼로그 어뎁터
-
     }
 
     fun initCalendarEvents() {
@@ -95,7 +92,7 @@ class MainActivity : AppCompatActivity() {
                 val taskListDialog = RecyclerDialog(
                     holder.localDate!!,
                     object : RecyclerDialogAdapter.RecyclerDialogInterface {
-                        override fun onItemClick(targetDate: LocalDate, todo: String) {
+                        override fun onItemClick() {
                             calendarAdapter.notifyDataSetChanged()
                         }
                     })
