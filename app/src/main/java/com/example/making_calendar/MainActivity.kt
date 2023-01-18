@@ -1,11 +1,15 @@
 package com.example.making_calendar
 
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
+import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.making_calendar.adapter.CalendarAdapter
 import com.example.making_calendar.adapter.RecyclerDialogAdapter
 import com.example.making_calendar.adapter.viewholder.CalendarViewHolder
@@ -15,6 +19,7 @@ import com.example.making_calendar.data.database.TaskDatabase
 import com.example.making_calendar.databinding.ActivityMainBinding
 import com.example.making_calendar.dialog.EditDialog
 import com.example.making_calendar.dialog.RecyclerDialog
+import com.example.making_calendar.util.PixelRatio
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -28,7 +33,8 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var db: TaskDatabase
 
-
+    private var tempRecyclerHeight = 1336
+    private var tempRecyclerWidth = 974
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -43,7 +49,6 @@ class MainActivity : AppCompatActivity() {
         initCalendarAdapter()
         initCalendarEvents()
         clickMoveEvent()
-
     }
 
     fun clickMoveEvent() {
@@ -55,6 +60,8 @@ class MainActivity : AppCompatActivity() {
 
             binding.dateYearText.text = CalendarData.curDate.year.toString()
             binding.dateMonthText.text = CalendarData.curDate.monthValue.toString()
+            Log.d("hyeok", "height: ${binding.recyclerCalendar.height}")
+            Log.d("hyeok", "Width: ${binding.recyclerCalendar.width}")
         }
 
         binding.prevMonthImg.setOnClickListener {
@@ -62,9 +69,10 @@ class MainActivity : AppCompatActivity() {
             CalendarData.moveMonth(-1)
             calendarAdapter.refreshData()
             calendarAdapter.notifyDataSetChanged()
-
             binding.dateYearText.text = CalendarData.curDate.year.toString()
             binding.dateMonthText.text = CalendarData.curDate.monthValue.toString()
+            Log.d("hyeok", "height: ${binding.recyclerCalendar.height}")
+            Log.d("hyeok", "Width: ${binding.recyclerCalendar.width}")
         }
     }
 
@@ -84,6 +92,8 @@ class MainActivity : AppCompatActivity() {
             addItemDecoration(itemDecoration1)
             addItemDecoration(itemDecoration2)
         }
+
+        calendarAdapter.resizeView(tempRecyclerWidth - 20, tempRecyclerHeight - 20)
     }
 
     fun initCalendarEvents() {

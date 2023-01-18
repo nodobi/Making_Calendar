@@ -1,11 +1,14 @@
 package com.example.making_calendar.adapter
 
 import android.content.Context
+import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.ViewGroup
+import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.RecyclerView
+import com.example.making_calendar.R
 import com.example.making_calendar.adapter.viewholder.CalendarViewHolder
 import com.example.making_calendar.data.CalendarData
 import com.example.making_calendar.data.database.Task
@@ -24,6 +27,8 @@ class CalendarAdapter(
     RecyclerView.Adapter<CalendarViewHolder>() {
     private var dateData: List<LocalDate>? = null
     private var calendarAdapterInterface: CalendarAdapterInterface? = null
+    private var width = 0
+    private var height = 0
 
     init {
         refreshData()
@@ -40,12 +45,6 @@ class CalendarAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CalendarViewHolder {
-        val weekCnt: Int = CalendarData.curDate.plusMonths(1).withDayOfMonth(1).minusDays(1)
-            .get(WeekFields.SUNDAY_START.weekOfYear()) - CalendarData.curDate.withDayOfMonth(1)
-            .get(WeekFields.SUNDAY_START.weekOfYear()) + 1
-        val height = parent.height / weekCnt
-        val width = parent.width / 7
-
         Log.d("hyeok", "height: $height, width: $width")
 
         val myViewHolder =
@@ -54,6 +53,8 @@ class CalendarAdapter(
         myViewHolder.itemView.layoutParams = RecyclerView.LayoutParams(width, height)
         return myViewHolder
     }
+
+
 
     override fun onBindViewHolder(holder: CalendarViewHolder, position: Int) {
 
@@ -67,20 +68,8 @@ class CalendarAdapter(
             }.await()
             holder.onBind(taskList, context)
         }
-        bind.root.setOnTouchListener { _, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    Log.d("hyeok", "Action_Down")
-                    false
-                }
-                MotionEvent.ACTION_UP -> {
-                    Log.d("hyeok", "Action_Up")
-                    false
-                }
-                else -> false
-            }
-            false
-        }
+
+
 
         bind.root.setOnClickListener {
             Log.d("hyeok", "onClickListener")
@@ -102,6 +91,14 @@ class CalendarAdapter(
     // 이번달 날짜 계산
     fun refreshData() {
         dateData = CalendarData.curMonthDateList()
+    }
+
+    fun resizeView(width: Int, height: Int) {
+        val weekCnt: Int = CalendarData.curDate.plusMonths(1).withDayOfMonth(1).minusDays(1)
+            .get(WeekFields.SUNDAY_START.weekOfYear()) - CalendarData.curDate.withDayOfMonth(1)
+            .get(WeekFields.SUNDAY_START.weekOfYear()) + 1
+        this.width = width / 7
+        this.height = height / weekCnt
     }
 
 

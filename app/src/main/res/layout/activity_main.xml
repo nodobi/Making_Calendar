@@ -105,6 +105,7 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_calendar"
+        android:overScrollMode="never"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
