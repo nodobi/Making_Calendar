@@ -109,28 +109,6 @@ class MainActivity : AppCompatActivity() {
                         mViewHolderTouched: RecyclerView.ViewHolder?,
                         position: Int
                     ) {
-//                        TODO("다이얼로그 내용 삭제하고 하단 onLongItemRelease로 이동")
-//                        TODO("범위 설정이 가능해짐에 따라 범위 등록 기능이 필요")
-                        val addTaskDialog = EditDialog(null, "등록하기")
-                        addTaskDialog.registerEvent(object : EditDialog.EditDialogInterface {
-                            override fun onEditDialogButtonClick(text: String) {
-                                (mViewHolderTouched as CalendarViewHolder).addTaskOnItemContainer(text)
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    val newTask = Task(
-                                        CalendarData.dateToString((mViewHolderTouched as CalendarViewHolder).localDate!!),
-                                        null,
-                                        text
-                                    )
-                                    CoroutineScope(Dispatchers.IO).async {
-                                        db.taskDao().insert(newTask)
-                                    }.await()
-                                    calendarAdapter.notifyDataSetChanged()
-                                    addTaskDialog.dismiss()
-                                }
-                            }
-                        })
-                        addTaskDialog.show(supportFragmentManager, "AddTaskDialog_Show")
-
                     }
 
                     override fun onItemClicked(
@@ -161,11 +139,28 @@ class MainActivity : AppCompatActivity() {
                         rv: RecyclerView?,
                         selection: List<RecyclerView.ViewHolder?>?
                     ) {
-                        if (selection != null) {
-                            for(viewHolderSelected in selection) {
-                                (viewHolderSelected as CalendarViewHolder).itemView.isSelected = false
+                        (rv?.adapter as CalendarAdapter).clearSelectedItems()
+
+                        val addTaskDialog = EditDialog(null, "등록하기")
+                        addTaskDialog.registerEvent(object : EditDialog.EditDialogInterface {
+                            override fun onEditDialogButtonClick(text: String) {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    val newTask = Task(
+                                        (selection!!.first() as CalendarViewHolder).localDate!!,
+                                        (selection.last() as CalendarViewHolder).localDate!!,
+                                        null,
+                                        null,
+                                        text
+                                    )
+                                    CoroutineScope(Dispatchers.IO).async {
+                                        db.taskDao().insert(newTask)
+                                    }.await()
+                                    calendarAdapter.notifyDataSetChanged()
+                                    addTaskDialog.dismiss()
+                                }
                             }
-                        }
+                        })
+                        addTaskDialog.show(supportFragmentManager, "AddTaskDialog_Show")
 
 
                     }

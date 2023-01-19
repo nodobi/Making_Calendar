@@ -1,19 +1,28 @@
 package com.example.making_calendar.data.database
 
 import android.content.Context
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
+import androidx.room.*
+import androidx.room.migration.AutoMigrationSpec
 
-@Database(version = 1, entities = [Task::class])
-abstract class TaskDatabase: RoomDatabase() {
-    abstract fun taskDao() : TaskDao
+@Database(
+    version = 2,
+    entities = [Task::class]
+)
+@TypeConverters(
+    LocalDateConverter::class,
+    LocalTimeConverter::class
+)
+abstract class TaskDatabase : RoomDatabase() {
+    abstract fun taskDao(): TaskDao
+
+//    @DeleteTable(tableName = "task_table")
+//    class TempMigration : AutoMigrationSpec {}
 
     companion object {
         private var instance: TaskDatabase? = null
 
         fun getInstance(context: Context): TaskDatabase? {
-            if(instance == null) {
+            if (instance == null) {
                 synchronized(TaskDatabase::class) {
                     instance = Room.databaseBuilder(
                         context.applicationContext,

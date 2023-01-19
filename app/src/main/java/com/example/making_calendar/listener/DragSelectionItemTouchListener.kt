@@ -29,11 +29,9 @@ class DragSelectionItemTouchListener(
             Math.min(mViewHolderLongPressed!!.adapterPosition, mViewHolderInFocus!!.adapterPosition)
         val end: Int =
             Math.max(mViewHolderLongPressed!!.adapterPosition, mViewHolderInFocus!!.adapterPosition)
-        var mSelectedViewHolderPos: MutableList<Int> = mutableListOf()
         mSelectedViewHolderList = mutableListOf()
         for (idx in start..end) {
             mSelectedViewHolderList.add(rv.findViewHolderForAdapterPosition(idx))
-            mSelectedViewHolderPos.add(idx)
         }
 
         listener.onMultipleViewHoldersSelected(rv, mSelectedViewHolderList)

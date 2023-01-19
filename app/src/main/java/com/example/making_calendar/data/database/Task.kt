@@ -7,8 +7,10 @@ import java.time.LocalTime
 
 @Entity(tableName = "task_table")
 data class Task (
-    var date: String,
-    var time: String?,
+    var sDate: LocalDate,
+    var eDate: LocalDate,
+    var sTime: LocalTime?,
+    var eTime: LocalTime?,
     var todo: String,
 ){
     @PrimaryKey(autoGenerate = true) var id: Long = 0;

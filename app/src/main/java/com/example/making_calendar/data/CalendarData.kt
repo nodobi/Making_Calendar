@@ -33,27 +33,9 @@ object CalendarData {
             curDate = curDate.minusMonths(month * -1)
     }
 
-    fun loadCurMonthTasks(): List<Task> {
-        var taskList: MutableList<Task> = mutableListOf()
-        val curMonthDates = curMonthDateList()
-        for(date in curMonthDates) {
-            val curDateTaskList : List<Task>? = db.taskDao().getTaskListByDate(dateToString(date))
-            for(task in curDateTaskList!!) {
-                taskList.add(task)
-            }
-        }
-        return taskList.toList()
-    }
-
     fun loadTasksByDate(date: LocalDate): List<Task>? {
-        var taskList: List<Task>? = db.taskDao().getTaskListByDate(dateToString(date))
+        var taskList: List<Task>? = db.taskDao().getTaskListByDate(date)
         return taskList
-    }
-
-    fun loadTodosByDate(date: LocalDate): List<String>? {
-        var todoList: List<String>? = db.taskDao().getTodoListByDate(dateToString(date))
-        Log.d("hyeok","LoadTodosByDate END")
-        return todoList
     }
 
     fun curMonthDateList(): List<LocalDate> {
@@ -77,7 +59,4 @@ object CalendarData {
         db.taskDao().delete(task)
     }
 
-    fun updateTask(date: LocalDate, todo: String) {
-        db.taskDao().updateTaskByDate(dateToString(date), todo)
-    }
 }
