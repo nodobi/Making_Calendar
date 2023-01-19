@@ -19,6 +19,8 @@ import com.example.making_calendar.data.database.TaskDatabase
 import com.example.making_calendar.databinding.ActivityMainBinding
 import com.example.making_calendar.dialog.EditDialog
 import com.example.making_calendar.dialog.RecyclerDialog
+import com.example.making_calendar.listener.CalendarItemInteractionListener
+import com.example.making_calendar.listener.DragSelectionItemTouchListener
 import com.example.making_calendar.util.PixelRatio
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -97,40 +99,81 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun initCalendarEvents() {
-        calendarAdapter.registerEvents(object : CalendarAdapter.CalendarAdapterInterface {
-            override fun onItemClick(holder: CalendarViewHolder) {
-                val taskListDialog = RecyclerDialog(
-                    holder.localDate!!,
-                    object : RecyclerDialogAdapter.RecyclerDialogInterface {
-                        override fun onItemClick() {
-                            calendarAdapter.notifyDataSetChanged()
-                        }
-                    })
-                taskListDialog.show(supportFragmentManager, "TaskListDialog_Show")
-            }
 
-            override fun onItemLongClick(holder: CalendarViewHolder) {
-                val addTaskDialog = EditDialog(null, "등록하기")
-                addTaskDialog.registerEvent(object : EditDialog.EditDialogInterface {
-                    override fun onEditDialogButtonClick(text: String) {
-                        holder.addTaskOnItemContainer(text)
-                        CoroutineScope(Dispatchers.Main).launch {
-                            val newTask = Task(
-                                CalendarData.dateToString(holder.localDate!!),
-                                null,
-                                text
-                            )
-                            CoroutineScope(Dispatchers.IO).async {
-                                db.taskDao().insert(newTask)
-                            }.await()
-                            calendarAdapter.notifyDataSetChanged()
-                            addTaskDialog.dismiss()
+        binding.recyclerCalendar.addOnItemTouchListener(
+            DragSelectionItemTouchListener(
+                this,
+                object : CalendarItemInteractionListener {
+                    override fun onLongItemClicked(
+                        recyclerView: RecyclerView?,
+                        mViewHolderTouched: RecyclerView.ViewHolder?,
+                        position: Int
+                    ) {
+//                        TODO("다이얼로그 내용 삭제하고 하단 onLongItemRelease로 이동")
+//                        TODO("범위 설정이 가능해짐에 따라 범위 등록 기능이 필요")
+                        val addTaskDialog = EditDialog(null, "등록하기")
+                        addTaskDialog.registerEvent(object : EditDialog.EditDialogInterface {
+                            override fun onEditDialogButtonClick(text: String) {
+                                (mViewHolderTouched as CalendarViewHolder).addTaskOnItemContainer(text)
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    val newTask = Task(
+                                        CalendarData.dateToString((mViewHolderTouched as CalendarViewHolder).localDate!!),
+                                        null,
+                                        text
+                                    )
+                                    CoroutineScope(Dispatchers.IO).async {
+                                        db.taskDao().insert(newTask)
+                                    }.await()
+                                    calendarAdapter.notifyDataSetChanged()
+                                    addTaskDialog.dismiss()
+                                }
+                            }
+                        })
+                        addTaskDialog.show(supportFragmentManager, "AddTaskDialog_Show")
+
+                    }
+
+                    override fun onItemClicked(
+                        recyclerView: RecyclerView?,
+                        mViewHolderTouched: RecyclerView.ViewHolder?,
+                        position: Int
+                    ) {
+                        val taskListDialog = RecyclerDialog(
+                            (mViewHolderTouched as CalendarViewHolder).localDate!!,
+                            object : RecyclerDialogAdapter.RecyclerDialogInterface {
+                                override fun onItemClick() {
+                                    calendarAdapter.notifyDataSetChanged()
+                                }
+                            })
+                        taskListDialog.show(supportFragmentManager, "TaskListDialog_Show")
+                    }
+
+                    override fun onMultipleViewHoldersSelected(
+                        rv: RecyclerView?,
+                        selection: List<RecyclerView.ViewHolder?>?
+                    ) {
+                        if (selection != null) {
+                            (rv?.adapter as CalendarAdapter).selectItems(selection as List<CalendarViewHolder?>)
                         }
                     }
-                })
-                addTaskDialog.show(supportFragmentManager, "AddTaskDialog_Show")
-            }
 
-        })
+                    override fun onLongItemReleased(
+                        rv: RecyclerView?,
+                        selection: List<RecyclerView.ViewHolder?>?
+                    ) {
+                        if (selection != null) {
+                            for(viewHolderSelected in selection) {
+                                (viewHolderSelected as CalendarViewHolder).itemView.isSelected = false
+                            }
+                        }
+
+
+                    }
+
+                })
+        )
+
+
+
     }
 }

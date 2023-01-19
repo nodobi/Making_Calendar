@@ -26,22 +26,13 @@ class CalendarAdapter(
 ) :
     RecyclerView.Adapter<CalendarViewHolder>() {
     private var dateData: List<LocalDate>? = null
-    private var calendarAdapterInterface: CalendarAdapterInterface? = null
+    private var previousSelectedItems: List<CalendarViewHolder?>? = null
     private var width = 0
     private var height = 0
 
     init {
         refreshData()
         notifyDataSetChanged()
-    }
-
-    interface CalendarAdapterInterface {
-        fun onItemClick(holder: CalendarViewHolder)
-        fun onItemLongClick(holder: CalendarViewHolder)
-    }
-
-    fun registerEvents(calendarAdapterInterface: CalendarAdapterInterface) {
-        this.calendarAdapterInterface = calendarAdapterInterface
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CalendarViewHolder {
@@ -53,7 +44,6 @@ class CalendarAdapter(
         myViewHolder.itemView.layoutParams = RecyclerView.LayoutParams(width, height)
         return myViewHolder
     }
-
 
 
     override fun onBindViewHolder(holder: CalendarViewHolder, position: Int) {
@@ -70,18 +60,6 @@ class CalendarAdapter(
         }
 
 
-
-        bind.root.setOnClickListener {
-            Log.d("hyeok", "onClickListener")
-//            this.calendarAdapterInterface?.onItemClick(holder)
-        }
-
-        // 리사이클러 뷰 홀더에 클릭 이벤트 추가
-        bind.root.setOnLongClickListener {
-            Log.d("hyeok", "onLongClickListener")
-//            this.calendarAdapterInterface?.onItemLongClick(holder)
-            return@setOnLongClickListener true
-        }
     }
 
     override fun getItemCount(): Int {
@@ -101,5 +79,19 @@ class CalendarAdapter(
         this.height = height / weekCnt
     }
 
+    fun clearSelectedItems() {
+        if(previousSelectedItems != null) {
+            for (item in previousSelectedItems!!) {
+                item?.itemView?.isSelected = false
+            }
+        }
+    }
 
+    fun selectItems(selection: List<CalendarViewHolder?>) {
+        clearSelectedItems()
+        for (item in selection) {
+            item?.itemView?.isSelected = true
+        }
+        previousSelectedItems = selection
+    }
 }
