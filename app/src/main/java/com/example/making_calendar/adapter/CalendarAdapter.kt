@@ -1,14 +1,10 @@
 package com.example.making_calendar.adapter
 
 import android.content.Context
-import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.ViewGroup
-import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.RecyclerView
-import com.example.making_calendar.R
 import com.example.making_calendar.adapter.viewholder.CalendarViewHolder
 import com.example.making_calendar.data.CalendarData
 import com.example.making_calendar.data.database.Task
@@ -18,7 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.temporal.WeekFields
 
 class CalendarAdapter(
@@ -27,6 +22,8 @@ class CalendarAdapter(
     RecyclerView.Adapter<CalendarViewHolder>() {
     private var dateData: List<LocalDate>? = null
     private var previousSelectedItems: List<CalendarViewHolder?>? = null
+    private var recyclerWidth = 0
+    private var recyclerHeight = 0
     private var width = 0
     private var height = 0
 
@@ -36,19 +33,20 @@ class CalendarAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CalendarViewHolder {
-        Log.d("hyeok", "height: $height, width: $width")
-
+        if(width == 0 && height == 0) {
+            recyclerWidth = parent.width
+            recyclerHeight = parent.height
+            resizeView()
+        }
         val myViewHolder =
             CalendarViewHolder(ItemTextBinding.inflate(LayoutInflater.from(parent.context)))
 
-        myViewHolder.itemView.layoutParams = RecyclerView.LayoutParams(width, height)
         return myViewHolder
     }
 
 
     override fun onBindViewHolder(holder: CalendarViewHolder, position: Int) {
-
-        val bind = holder.binding
+        holder.itemView.layoutParams = RecyclerView.LayoutParams(width, height)
         holder.localDate = dateData?.get(holder.adapterPosition)
         holder.dateView.text = holder.localDate?.dayOfMonth.toString()
         var taskList: List<Task>? = null
@@ -69,14 +67,16 @@ class CalendarAdapter(
     // 이번달 날짜 계산
     fun refreshData() {
         dateData = CalendarData.curMonthDateList()
+        resizeView()
     }
 
-    fun resizeView(width: Int, height: Int) {
+    fun resizeView() {
+        Log.d("hyeok", "ResizeView| w: $width, h: $height")
         val weekCnt: Int = CalendarData.curDate.plusMonths(1).withDayOfMonth(1).minusDays(1)
             .get(WeekFields.SUNDAY_START.weekOfYear()) - CalendarData.curDate.withDayOfMonth(1)
             .get(WeekFields.SUNDAY_START.weekOfYear()) + 1
-        this.width = width / 7
-        this.height = height / weekCnt
+        this.width = recyclerWidth / 7
+        this.height = recyclerHeight / weekCnt
     }
 
     fun clearSelectedItems() {

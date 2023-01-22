@@ -1,12 +1,9 @@
 package com.example.making_calendar
 
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
-import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,12 +18,10 @@ import com.example.making_calendar.dialog.EditDialog
 import com.example.making_calendar.dialog.RecyclerDialog
 import com.example.making_calendar.listener.CalendarItemInteractionListener
 import com.example.making_calendar.listener.DragSelectionItemTouchListener
-import com.example.making_calendar.util.PixelRatio
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
@@ -35,8 +30,6 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var db: TaskDatabase
 
-    private var tempRecyclerHeight = 1336
-    private var tempRecyclerWidth = 974
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -52,29 +45,25 @@ class MainActivity : AppCompatActivity() {
         initCalendarEvents()
         clickMoveEvent()
     }
-
     fun clickMoveEvent() {
         binding.nextMonthImg.setOnClickListener {
             Log.d("hyeok", "Click NextMonthImgBtn")
             CalendarData.moveMonth(1)
             calendarAdapter.refreshData()
-            calendarAdapter.notifyDataSetChanged()
 
             binding.dateYearText.text = CalendarData.curDate.year.toString()
             binding.dateMonthText.text = CalendarData.curDate.monthValue.toString()
-            Log.d("hyeok", "height: ${binding.recyclerCalendar.height}")
-            Log.d("hyeok", "Width: ${binding.recyclerCalendar.width}")
+            calendarAdapter.notifyDataSetChanged()
         }
 
         binding.prevMonthImg.setOnClickListener {
             Log.d("hyeok", "Click PrevMonthImgBtn")
             CalendarData.moveMonth(-1)
             calendarAdapter.refreshData()
-            calendarAdapter.notifyDataSetChanged()
+
             binding.dateYearText.text = CalendarData.curDate.year.toString()
             binding.dateMonthText.text = CalendarData.curDate.monthValue.toString()
-            Log.d("hyeok", "height: ${binding.recyclerCalendar.height}")
-            Log.d("hyeok", "Width: ${binding.recyclerCalendar.width}")
+            calendarAdapter.notifyDataSetChanged()
         }
     }
 
@@ -95,7 +84,6 @@ class MainActivity : AppCompatActivity() {
             addItemDecoration(itemDecoration2)
         }
 
-        calendarAdapter.resizeView(tempRecyclerWidth - 20, tempRecyclerHeight - 20)
     }
 
     fun initCalendarEvents() {
